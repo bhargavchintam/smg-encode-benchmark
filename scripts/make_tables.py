@@ -9,8 +9,8 @@ Reads one run directory written by run_bench.py:
   <model>/load-*.csv, rss.csv, rss_runtime.csv   construction time and peak memory
   <model>/parity/*.json            token-id parity reports
 
-Example:
-  python3 make_tables.py "$DATA/results/<run-id>"
+Example (from the repository root):
+  python3 scripts/make_tables.py "$DATA/results/<run-id>"
 """
 
 import argparse
@@ -213,7 +213,9 @@ def _mb(value):
 
 def _env_section(env):
     lines = ["## Setup", ""]
-    for key in ("machine", "os", "power", "rustc", "smg_commit", "fastokens", "tokenizers", "corpus_sha256", "rounds", "builds"):
+    # smg_commit: runs made inside the smg fork; bench_commit and llm-tokenizer: runs made from this repository.
+    keys = ("machine", "os", "power", "rustc", "smg_commit", "bench_commit", "llm-tokenizer", "fastokens", "tokenizers")
+    for key in keys + ("corpus_sha256", "rounds", "builds"):
         if key in env:
             value = env[key]
             if isinstance(value, (dict, list)):

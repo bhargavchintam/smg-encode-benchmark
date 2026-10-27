@@ -1,0 +1,36 @@
+# Build and unit tests on every push and pull request. The benchmark itself
+# only runs by hand (see encode-bench.yml).
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.98.0
+        with:
+          components: clippy
+      - name: Unit tests
+        run: cargo test --locked
+      - name: Clippy
+        run: cargo clippy --locked --all-targets -- -D warnings
+      - name: Release build (SMG's release profile, the z build)
+        run: cargo build --locked --release --bin encode_backends
+
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Script tests (includes the README results check)
+        working-directory: scripts
+        run: python3 -m unittest -v

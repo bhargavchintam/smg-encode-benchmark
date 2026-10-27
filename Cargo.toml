@@ -1,0 +1,50 @@
+[package]
+name = "smg-encode-benchmark"
+version = "0.1.0"
+edition = "2021"
+description = "Benchmark of SMG's tokenizer encode path against HF tokenizers encode_fast and fastokens"
+license = "Apache-2.0"
+repository = "https://github.com/bhargavchintam/smg-encode-benchmark"
+authors = ["Bindu Bhargava Reddy Chintam"]
+publish = false
+
+[[bin]]
+name = "encode_backends"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0"
+cpu-time = "1.0"
+# The two encoders under test, pinned to the versions in results/.
+fastokens = { version = "=0.3.2", default-features = false }
+tokenizers = "=0.23.1"
+# SMG's tokenizer crate from crates.io. Version 1.8.0 has the same encode and
+# cache code as smg commit 33dd6c4e, which the committed results were built on.
+llm-tokenizer = "=1.8.0"
+serde_json = { version = "1.0", features = ["preserve_order"] }
+tempfile = "3.27"
+# Same allocator and features as the SMG gateway build (feature jemalloc-stats).
+tikv-jemallocator = { version = "0.6", default-features = false, features = ["background_threads_runtime_support", "stats"] }
+
+# The harness prints its results on purpose (see the #![expect] in src/main.rs).
+[lints.clippy]
+print_stdout = "warn"
+
+# SMG's release profile at commit 33dd6c4e (copied from its workspace
+# Cargo.toml), so the `z` build is SMG as shipped at that time. run_bench.py
+# makes the other builds by adding opt-level overrides with `cargo --config`.
+[profile.release]
+opt-level = "z"     # Optimize for size
+lto = "fat"         # Full LTO for smaller binaries
+codegen-units = 1   # Better optimization, slower compile
+strip = false
+
+# SMG's own overrides for the tiktoken encode path.
+[profile.release.package.tiktoken-rs]
+opt-level = 2
+
+[profile.release.package.fancy-regex]
+opt-level = 2
+
+[profile.release.package.regex-automata]
+opt-level = 2

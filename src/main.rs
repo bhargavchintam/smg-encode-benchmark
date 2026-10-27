@@ -33,7 +33,15 @@
 //! `turns` also smg_cached / fastokens_cached (SMG's L0+L1 caches on top).
 //! `FASTOKENS_BPE_THREADS` is read once per process; set it per run.
 //!
-//! Build it with `--release` so it uses the profile SMG ships.
+//! Build it with `--release` so it uses SMG's release profile (copied into
+//! Cargo.toml).
+//!
+//! Changes from the original: this file was first written as
+//! `crates/tokenizer/examples/encode_backends.rs` in the bhargavchintam/smg
+//! fork (branch `bhargavchintam/fast-encode-bench`). Here it is a standalone
+//! binary built against the published `llm-tokenizer` 1.8.0 crate, so the
+//! `native_reasoning_effort_off_values` method (added to SMG's `Tokenizer`
+//! trait after 1.8.0, not on the encode path) is no longer forwarded.
 #![expect(clippy::print_stdout, reason = "benchmark CLI prints its results")]
 
 use std::{
@@ -1024,10 +1032,6 @@ impl Tokenizer for FastEncodeTokenizer {
         self.smg.native_reasoning_effort_values()
     }
 
-    fn native_reasoning_effort_off_values(&self) -> &'static [&'static str] {
-        self.smg.native_reasoning_effort_off_values()
-    }
-
     fn think_in_prefill(&self) -> bool {
         self.smg.think_in_prefill()
     }
@@ -1171,7 +1175,7 @@ mod tests {
     }
 
     /// Needs a downloaded model: ENCODE_BENCH_MODEL_DIR=/path/to/model \
-    ///   cargo test -p llm-tokenizer --example encode_backends -- --ignored
+    ///   cargo test -- --ignored
     #[test]
     #[ignore = "needs ENCODE_BENCH_MODEL_DIR with a tokenizer.json"]
     fn fast_encode_wrapper_matches_smg_and_delegates_decode() {

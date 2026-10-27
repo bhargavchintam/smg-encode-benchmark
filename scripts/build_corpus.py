@@ -9,10 +9,11 @@ Writes four files into --out:
 Keep the corpus outside the repository and share SHA256SUMS, so anyone can
 check they rebuilt exactly the same prompts.
 
-Example:
-  python3 build_corpus.py --repo ~/Downloads/oss/smg \
-      --cjk ~/Downloads/oss/encode-bench-data/sources/gutenberg-23962-xiyouji.txt \
-      --out ~/Downloads/oss/encode-bench-data/corpus
+Example (from the repository root; --repo is an smg checkout at commit 33dd6c4e
+for the same prompts as the committed results):
+  python3 scripts/build_corpus.py --repo "$DATA/smg-src" \
+      --cjk "$DATA/sources/gutenberg-23962-xiyouji.txt" \
+      --out "$DATA/corpus"
 """
 
 import argparse

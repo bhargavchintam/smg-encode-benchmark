@@ -30,6 +30,13 @@ class BuildArgsTest(unittest.TestCase):
         self.assertNotIn("--config", args)
         self.assertEqual(args[args.index("--target-dir") + 1], "target/tb-z")
 
+    def test_builds_the_standalone_binary(self):
+        args = rb.build_args("z")
+        self.assertEqual(args[args.index("--bin") + 1], "encode_backends")
+        self.assertNotIn("--example", args)
+        self.assertEqual(rb._binary("o2"), rb.REPO / "target" / "tb-o2" / "release" / "encode_backends")
+        self.assertTrue((rb.REPO / "Cargo.toml").is_file())
+
     def test_o2_build_overrides_the_whole_profile(self):
         self.assertIn("profile.release.opt-level=2", rb.build_args("o2"))
 

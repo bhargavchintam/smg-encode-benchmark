@@ -5,9 +5,9 @@ the sha256 of every file the benchmark reads. Downloads are checked against
 it, so every machine benchmarks byte-identical tokenizers. Each model lands in
 <out>/<org>__<name>@<commit12>/ with a fetch.json copy of its pin.
 
-Example:
-  python3 fetch_models.py --out "$DATA/models"
-  python3 fetch_models.py --repin --model Qwen/Qwen3-4B-Instruct-2507  # print a new pin
+Example (from the repository root):
+  python3 scripts/fetch_models.py --out "$DATA/models"
+  python3 scripts/fetch_models.py --repin --model Qwen/Qwen3-4B-Instruct-2507  # print a new pin
 """
 
 import argparse

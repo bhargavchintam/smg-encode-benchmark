@@ -164,6 +164,14 @@ class ThroughputSummaryTest(unittest.TestCase):
 
 
 class ReportTest(unittest.TestCase):
+    def test_setup_lists_old_and_new_commit_keys(self):
+        old = mt._env_section({"smg_commit": "abc", "fastokens": "0.3.2"})
+        self.assertIn("- **smg_commit**: abc", old)
+        new = mt._env_section({"bench_commit": "def", "llm-tokenizer": "1.8.0", "tokenizers": "0.23.1"})
+        self.assertIn("- **bench_commit**: def", new)
+        self.assertIn("- **llm-tokenizer**: 1.8.0", new)
+        self.assertLess(new.index("llm-tokenizer"), new.index("tokenizers**"))
+
     def test_missing_rss_value_renders_as_dash(self):
         with tempfile.TemporaryDirectory() as tmp:
             model = Path(tmp) / "qwen3"

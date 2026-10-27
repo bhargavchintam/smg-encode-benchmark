@@ -1,0 +1,14 @@
+smg-encode-benchmark
+Copyright 2026 Bindu Bhargava Reddy Chintam
+
+This project benchmarks the tokenizer of SMG (Shepherd Model Gateway),
+https://github.com/smg-project/smg, Copyright 2024 SMG Team, licensed under
+the Apache License, Version 2.0.
+
+The harness and scripts were first written in a fork of SMG
+(https://github.com/bhargavchintam/smg, branch bhargavchintam/fast-encode-bench)
+and then moved here. The release profile in Cargo.toml and the settings in
+.cargo/config.toml come from SMG at commit
+33dd6c4e717b0370d09f0817de82d10a5a50ec6e. The harness builds against SMG's
+published llm-tokenizer crate and compares it with the tokenizers and
+fastokens crates, which keep their own licenses.

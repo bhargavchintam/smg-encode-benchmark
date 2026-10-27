@@ -1,7 +1,7 @@
 """Drive the encode benchmark end to end and write results.md.
 
 Steps, for each model (tokenizer files pinned in pins.json):
-  1. build the example once per build profile (z = SMG's release profile as
+  1. build the harness once per build profile (z = SMG's release profile as
      shipped; tok/toksys/hotdeps = some of HF's encode crates at opt-level 2;
      o2 = everything at opt-level 2)
   2. render the corpus, a disjoint warm-up corpus and a larger throughput
@@ -17,8 +17,8 @@ Steps, for each model (tokenizer files pinned in pins.json):
 On macOS the run refuses to start on battery unless --allow-battery is given,
 and keeps the machine awake while it runs.
 
-Example:
-  python3 crates/tokenizer/scripts/encode_bench/run_bench.py --data "$DATA" --legs 10
+Example (from the repository root):
+  python3 scripts/run_bench.py --data "$DATA" --legs 10
 """
 
 import argparse
@@ -33,8 +33,8 @@ from pathlib import Path
 import fetch_models
 import make_tables
 
-EXAMPLE = "encode_backends"
-REPO = Path(__file__).resolve().parents[4]
+BINARY = "encode_backends"
+REPO = Path(__file__).resolve().parents[1]
 # Crates on HF tokenizers' encode path that SMG's release profile builds at "z".
 HF_HOT_DEPS = [
     "tokenizers",
@@ -87,7 +87,7 @@ def build_args(name):
     if name not in BUILDS:
         raise ValueError(f"unknown build {name!r}; known: {sorted(BUILDS)}")
     return [
-        "cargo", "build", "--release", "-p", "llm-tokenizer", "--example", EXAMPLE,
+        "cargo", "build", "--release", "--bin", BINARY,
         "--target-dir", f"target/tb-{name}", *BUILDS[name],
     ]  # fmt: skip
 
@@ -144,7 +144,7 @@ def _output(cmd):
 
 
 def _binary(build):
-    return REPO / "target" / f"tb-{build}" / "release" / "examples" / EXAMPLE
+    return REPO / "target" / f"tb-{build}" / "release" / BINARY
 
 
 def _lock_version(crate):
@@ -191,7 +191,8 @@ def environment(data, models, builds, legs):
         "os": os_name,
         "power": power,
         "rustc": _output(["rustc", "-V"]),
-        "smg_commit": _output(["git", "-C", str(REPO), "rev-parse", "HEAD"]) + (" (dirty)" if dirty else ""),
+        "bench_commit": _output(["git", "-C", str(REPO), "rev-parse", "HEAD"]) + (" (dirty)" if dirty else ""),
+        "llm-tokenizer": _lock_version("llm-tokenizer"),
         "fastokens": _lock_version("fastokens"),
         "tokenizers": _lock_version("tokenizers"),
         "corpus_sha256": sums,
