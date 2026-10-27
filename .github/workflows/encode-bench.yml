@@ -1,0 +1,86 @@
+# Encode-backend benchmark on GitHub-hosted Linux runners (x86_64 and arm64).
+# Manual only, and never in the upstream repository: it exists so the numbers in
+# crates/tokenizer/scripts/encode_bench can be reproduced off a laptop.
+name: Encode benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      legs:
+        description: Timing legs per build (even number)
+        default: "6"
+      builds:
+        description: Builds to compare (z = SMG release profile as shipped)
+        default: "z,tok,toksys,hotdeps,o2"
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    if: github.repository != 'smg-project/smg'
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 240
+    env:
+      LEGS: ${{ inputs.legs }}
+      BUILDS: ${{ inputs.builds }}
+      RUN_ID: ${{ matrix.runner }}-${{ github.run_id }}
+      # Same corpora as the laptop run (the builder is deterministic).
+      CORPUS_SHA256: b5050a08bf6775c3c2666658ac0ee7dad765d9f1a4c1088325042f0054e5b887
+      WARMUP_SHA256: d53964f8a38c1a7beebcffb7fad973f84b2c51cb2100ffcd903ba577096d4797
+      THROUGHPUT_SHA256: 3de5bd7ff4378daabe38d5af4fb9399b6d598fe4e45070eaa317688672c335f3
+    steps:
+      # Set here, not in the job's env: job-level env can't use the runner context.
+      - name: Keep the benchmark data outside the checkout
+        run: echo "DATA=$RUNNER_TEMP/encode-bench-data" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v7
+
+      # The corpus is cut from SMG's own sources. Read them at a fixed upstream commit, so a
+      # branch that edits those sources (a fix under test) is timed on the same prompts.
+      - uses: actions/checkout@v7
+        with:
+          repository: smg-project/smg
+          ref: 33dd6c4e717b0370d09f0817de82d10a5a50ec6e
+          path: corpus-src
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@1.98.0
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Make sure GNU time is available (peak RSS)
+        run: test -x /usr/bin/time || (sudo apt-get update && sudo apt-get install -y time)
+
+      - name: Fetch pinned tokenizers and rebuild the corpora
+        working-directory: crates/tokenizer/scripts/encode_bench
+        run: |
+          set -euo pipefail
+          python3 fetch_models.py --out "$DATA/models"
+          mkdir -p "$DATA/sources"
+          CJK="$DATA/sources/gutenberg-23962-xiyouji.txt"
+          curl -sSfL -o "$CJK" https://www.gutenberg.org/ebooks/23962.txt.utf-8
+          echo "af3c9e408c0c58595b666ed9981b6fa1e9343f4bbc78309b1cb0818c32fc1f58  $CJK" | sha256sum -c -
+          python3 build_corpus.py --repo "$GITHUB_WORKSPACE/corpus-src" --cjk "$CJK" --out "$DATA/corpus"
+          python3 build_corpus.py --repo "$GITHUB_WORKSPACE/corpus-src" --cjk "$CJK" --out "$DATA/corpus-warmup" --seed 99 --per-bucket 20 --stress-slices 3
+          python3 build_corpus.py --repo "$GITHUB_WORKSPACE/corpus-src" --cjk "$CJK" --out "$DATA/corpus-throughput" --seed 7 --per-bucket 100 --stress-slices 3
+          printf '%s  %s\n%s  %s\n%s  %s\n' \
+            "$CORPUS_SHA256" "$DATA/corpus/conversations.jsonl" \
+            "$WARMUP_SHA256" "$DATA/corpus-warmup/conversations.jsonl" \
+            "$THROUGHPUT_SHA256" "$DATA/corpus-throughput/conversations.jsonl" | sha256sum -c -
+
+      - name: Run the benchmark
+        run: |
+          python3 crates/tokenizer/scripts/encode_bench/run_bench.py --data "$DATA" \
+            --legs "$LEGS" --builds "$BUILDS" --throughput-threads "1,$(nproc)" --run-id "$RUN_ID"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: encode-bench-${{ matrix.runner }}
+          path: ${{ env.DATA }}/results/
