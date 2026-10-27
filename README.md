@@ -52,7 +52,7 @@ At the time of these runs, SMG built its whole release binary with `opt-level = 
 
 ## Results
 
-"SMG as shipped" means SMG at commit [`33dd6c4e`](https://github.com/smg-project/smg/commit/33dd6c4e717b0370d09f0817de82d10a5a50ec6e) (26 September 2026): the `llm-tokenizer` 1.8.0 code with the release profile at `opt-level = "z"`. A number in brackets is the speed-up over SMG as shipped in the same file. The one exception is "fastokens, 1 thread", which is compared with SMG timed in the same one-thread process.
+"SMG as shipped" means SMG at commit [`33dd6c4e`](https://github.com/smg-project/smg/commit/33dd6c4e717b0370d09f0817de82d10a5a50ec6e) (26 September 2026), with its release profile at `opt-level = "z"`. A number in brackets is the speed-up over SMG as shipped in the same file. The one exception is "fastokens, 1 thread", which is compared with SMG timed in the same one-thread process.
 
 Please read the numbers with these limits in mind:
 
